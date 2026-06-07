@@ -71,7 +71,6 @@ try {
                             <?php foreach ($categories as $cat): ?>
                                 <li class="list-group-item d-flex justify-content-between align-items-center py-2">
                                     <span>ID: <strong><?php echo $cat['id']; ?></strong> | Tên: <strong><?php echo htmlspecialchars($cat['name']); ?></strong></span>
-                                    <span class="badge bg-secondary rounded-pill"><?php echo htmlspecialchars($cat['image']); ?></span>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
