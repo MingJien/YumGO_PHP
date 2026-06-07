@@ -1,0 +1,608 @@
+/**
+ * YumGO - Hệ thống CSS Tokens & Giao diện Người dùng
+ * Tách biệt, tùy biến trên nền Bootstrap 5.
+ */
+
+:root {
+  /* Brand & Accent Colors */
+  --yumgo-primary: #FF6600;           /* Cam nóng: Nút thêm món, CTA chính, giá tiền */
+  --yumgo-primary-hover: #E85A00;     /* Trạng thái Hover của màu chính */
+  --yumgo-primary-active: #CC4E00;    /* Trạng thái Active/Pressed */
+  --yumgo-primary-soft: #FFF0E6;      /* Nền phụ cam nhạt cho vùng nhấn mạnh */
+  --yumgo-secondary: #FFC107;         /* Vàng nghệ: Nhãn giảm giá SALE, phụ trợ */
+  --yumgo-secondary-soft: #FFF8E1;    /* Nền nhãn SALE */
+
+  /* Surface & Backgrounds */
+  --yumgo-canvas: #FFFFFF;            /* Nền trắng tinh: Thẻ card, modal, bottom nav */
+  --yumgo-canvas-soft: #F8F9FA;       /* Nền trang chính: Xám nhạt sạch sẽ */
+  --yumgo-canvas-warm: #FFF9F5;       /* Nền banner hoặc vùng chào mừng ấm áp */
+  --yumgo-surface-card: #FFFFFF;      /* Nền của thẻ món ăn */
+
+  /* Typography Colors */
+  --yumgo-ink: #1A1A2E;               /* Đen đậm: Tiêu đề trang, tên món, nhãn chính */
+  --yumgo-body: #4A4A68;              /* Xám đậm: Mô tả món ăn, nội dung văn bản chính */
+  --yumgo-muted: #8E8EA0;             /* Xám nhạt: Placeholder, text bị mờ, icon inactive */
+  --yumgo-on-primary: #FFFFFF;        /* Chữ trắng trên nền màu cam */
+
+  /* Badges & Semantic Status */
+  --yumgo-badge-hot-bg: #EF4444;      /* Nền nhãn HOT đỏ tươi */
+  --yumgo-badge-sale-bg: #FFC107;     /* Nền nhãn SALE vàng */
+  --yumgo-badge-unavailable-bg: #E5E7EB; /* Nền nhãn Tạm hết hàng xám nhạt */
+  --yumgo-badge-unavailable-text: #6B7280; /* Chữ nhãn Tạm hết hàng xám đậm */
+  --yumgo-success: #10B981;           /* Xanh lá: Thông báo thành công */
+  --yumgo-error: #EF4444;             /* Đỏ: Thông báo lỗi nhập liệu */
+
+  /* Borders & Dividers */
+  --yumgo-hairline: #E5E7EB;          /* Đường kẻ viền mờ nhạt */
+  --yumgo-hairline-soft: #F3F4F6;     /* Đường kẻ viền siêu mờ */
+  --yumgo-border-focus: #FF6600;      /* Viền khi trỏ chuột vào ô nhập liệu */
+
+  /* Elevation (Shadows) */
+  --shadow-card: 0px 2px 8px rgba(0, 0, 0, 0.06), 0px 0px 1px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0px 8px 24px rgba(0, 0, 0, 0.10), 0px 0px 1px rgba(0, 0, 0, 0.08);
+  --shadow-nav: 0px -2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0px 16px 48px rgba(0, 0, 0, 0.16), 0px 0px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Base Styles */
+body {
+  font-family: 'Inter', 'Roboto', -apple-system, sans-serif;
+  background-color: var(--yumgo-canvas-soft);
+  color: var(--yumgo-body);
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--yumgo-ink);
+  font-weight: 600;
+}
+
+/* Layout Utilities */
+.bg-canvas { background-color: var(--yumgo-canvas); }
+.bg-canvas-soft { background-color: var(--yumgo-canvas-soft); }
+.bg-canvas-warm { background-color: var(--yumgo-canvas-warm); }
+
+/* Typography Tokens */
+.display-hero {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.display-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.display-md {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.title-lg {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.title-md {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.body-lg {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.body-md {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.price-display {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--yumgo-primary);
+}
+.price-old {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--yumgo-muted);
+  text-decoration: line-through;
+}
+
+/* Border Radius System */
+.rounded-sm { border-radius: 8px !important; }
+.rounded-md { border-radius: 12px !important; }
+.rounded-lg { border-radius: 16px !important; }
+.rounded-pill { border-radius: 100px !important; }
+
+/* Custom Buttons & Interactions */
+.btn-primary-yumgo {
+  background-color: var(--yumgo-primary);
+  color: var(--yumgo-on-primary);
+  border: none;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 100px; /* Chuyển thành dạng rounded-pill theo quy chuẩn mới */
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-primary-yumgo:hover {
+  background-color: var(--yumgo-primary-hover);
+  color: var(--yumgo-on-primary);
+  transform: translateY(-1px);
+  box-shadow: 0px 4px 12px rgba(255, 102, 0, 0.2);
+}
+.btn-primary-yumgo:active {
+  background-color: var(--yumgo-primary-active);
+  transform: scale(0.98); /* Phản hồi vật lý co giãn xúc giác */
+}
+
+/* Cards (Airbnb + Vercel) */
+.food-card {
+  background-color: var(--yumgo-surface-card);
+  border: 1px solid var(--yumgo-hairline);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+}
+.food-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Bento Grid Features (Bento Background Diversity) */
+.bento-card {
+  border: 1px solid var(--yumgo-hairline);
+  box-shadow: var(--shadow-card);
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+}
+.bento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+.bento-delivery {
+  background-color: var(--yumgo-primary-soft) !important; /* Cam nhạt */
+  border-color: rgba(255, 102, 0, 0.15) !important;
+}
+.bento-delivery .fs-1 {
+  filter: drop-shadow(0px 4px 6px rgba(255, 102, 0, 0.2));
+}
+.bento-hygiene {
+  background-color: #E8F5E9 !important; /* Xanh lá nhạt */
+  border-color: rgba(46, 125, 50, 0.15) !important;
+}
+.bento-hygiene .fs-1 {
+  filter: drop-shadow(0px 4px 6px rgba(46, 125, 50, 0.2));
+}
+.bento-gift {
+  background-color: #FFFDE7 !important; /* Vàng nhạt */
+  border-color: rgba(245, 127, 23, 0.15) !important;
+}
+.bento-gift .fs-1 {
+  filter: drop-shadow(0px 4px 6px rgba(245, 127, 23, 0.2));
+}
+.food-card-img-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 75%; /* Tỷ lệ 4:3 */
+  overflow: hidden;
+}
+.food-card-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 300ms ease;
+}
+.food-card:hover .food-card-img {
+  transform: scale(1.05);
+}
+
+/* Grayscale for unavailable items */
+.food-unavailable {
+  filter: grayscale(100%);
+  opacity: 0.6;
+}
+
+/* Badges */
+.badge-hot {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: var(--yumgo-badge-hot-bg);
+  color: #fff;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 100px;
+  z-index: 10;
+}
+.badge-sale {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: var(--yumgo-badge-sale-bg);
+  color: #1A1A2E;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 100px;
+  z-index: 10;
+}
+
+/* Add to Cart circle button */
+.btn-add-quick {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--yumgo-primary-soft);
+  color: var(--yumgo-primary);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  transition: all 150ms ease;
+}
+.btn-add-quick:hover {
+  background-color: var(--yumgo-primary);
+  color: #fff;
+  transform: scale(1.1);
+}
+.btn-add-quick:active {
+  transform: scale(0.9);
+}
+
+/* Category Strip Horizontal Scroll */
+.category-strip {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  padding: 10px 0;
+  scrollbar-width: none; /* Firefox */
+}
+.category-strip::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+.category-pill {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  border-radius: 100px;
+  background-color: var(--yumgo-canvas);
+  border: 1px solid var(--yumgo-hairline);
+  color: var(--yumgo-ink);
+  font-weight: 500;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 150ms ease;
+}
+.category-pill:hover {
+  border-color: var(--yumgo-primary);
+  color: var(--yumgo-primary);
+}
+.category-pill.active {
+  background-color: var(--yumgo-primary);
+  border-color: var(--yumgo-primary);
+  color: var(--yumgo-on-primary);
+  font-weight: 600;
+}
+
+/* Bottom Navigation Bar for Mobile */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 64px;
+  background-color: var(--yumgo-canvas);
+  border-top: 1px solid var(--yumgo-hairline);
+  box-shadow: var(--shadow-nav);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+}
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: var(--yumgo-muted);
+  font-size: 11px;
+  font-weight: 500;
+  transition: color 150ms ease;
+}
+.bottom-nav-item i {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+.bottom-nav-item.active, .bottom-nav-item:hover {
+  color: var(--yumgo-primary);
+}
+
+/* Desktop Styles */
+@media (min-width: 992px) {
+  .bottom-nav {
+    display: none !important;
+  }
+}
+
+/* Toast Notification System */
+#toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+.yumgo-toast {
+  pointer-events: auto;
+  min-width: 300px;
+  max-width: 380px;
+  background-color: var(--yumgo-canvas);
+  border: 1px solid var(--yumgo-hairline);
+  border-left: 4px solid var(--yumgo-primary);
+  box-shadow: var(--shadow-modal);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: translateX(120%);
+  animation: toastSlideIn 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transition: all 300ms ease;
+}
+.yumgo-toast.toast-success {
+  border-left-color: var(--yumgo-success);
+}
+.yumgo-toast.toast-error {
+  border-left-color: var(--yumgo-error);
+}
+.yumgo-toast.fade-out {
+  transform: translateX(120%);
+  opacity: 0;
+}
+@keyframes toastSlideIn {
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Hero floating card animations */
+@keyframes float-main-card {
+  0%, 100% { transform: translateY(0px) rotate(-6deg); }
+  50% { transform: translateY(-10px) rotate(-4deg); }
+}
+@keyframes float-badge-card {
+  0%, 100% { transform: translateY(0px) rotate(8deg); }
+  50% { transform: translateY(-8px) rotate(10deg); }
+}
+#heroMainFoodCard {
+  animation: float-main-card 4s ease-in-out infinite;
+}
+#heroFloatingBadge {
+  animation: float-badge-card 3.5s ease-in-out infinite;
+}
+
+/* Warm food card transition */
+.food-card .food-card-img {
+  transition: transform 350ms cubic-bezier(0.4, 0, 0.2, 1), filter 350ms ease;
+}
+.food-card:hover .food-card-img {
+  filter: saturate(1.15) contrast(1.03);
+}
+
+/* Side-Drawer Cart Styles (AlpineJS driven) */
+.drawer-cart {
+  position: fixed;
+  top: 0;
+  right: -420px;
+  width: 420px;
+  max-width: 100vw;
+  height: 100vh;
+  background-color: var(--yumgo-canvas);
+  z-index: 1080;
+  box-shadow: var(--shadow-modal);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+.drawer-cart.show {
+  transform: translateX(-420px);
+}
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(26, 26, 46, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1070;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+.drawer-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.drawer-header {
+  border-bottom: 1px solid var(--yumgo-hairline);
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.drawer-body {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 20px;
+  scrollbar-width: thin;
+}
+.drawer-footer {
+  border-top: 1px solid var(--yumgo-hairline);
+  padding: 20px;
+  background-color: var(--yumgo-canvas-soft);
+}
+
+/* Left Sidebar Menu Styles (AlpineJS driven) */
+.sidebar-menu {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  width: 300px;
+  max-width: 85vw;
+  height: 100vh;
+  background-color: var(--yumgo-canvas);
+  z-index: 1080;
+  box-shadow: var(--shadow-modal);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-menu.show {
+  transform: translateX(300px);
+}
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(26, 26, 46, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1070;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+.menu-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Hero Premium 100vh Layout & Background Glow */
+.hero-premium {
+  min-height: calc(100vh - 72px);
+  background: radial-gradient(circle at 80% 20%, rgba(255, 102, 0, 0.05) 0%, rgba(255, 255, 255, 0) 50%),
+              radial-gradient(circle at 20% 80%, rgba(255, 102, 0, 0.03) 0%, rgba(255, 255, 255, 0) 60%),
+              var(--yumgo-canvas);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glassmorphism for Floating Cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(190%);
+  -webkit-backdrop-filter: blur(12px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04), 0 1px 0px 0 rgba(0, 0, 0, 0.02);
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card:hover {
+  transform: translateY(-4px) scale(1.03) !important;
+  box-shadow: 0 12px 40px 0 rgba(255, 102, 0, 0.1), 0 1px 0px 0 rgba(0, 0, 0, 0.02);
+}
+
+/* Floating Animations for Hero Graphics */
+@keyframes float-delay-1 {
+  0%, 100% { transform: translateY(0px) rotate(4deg); }
+  50% { transform: translateY(-8px) rotate(6deg); }
+}
+@keyframes float-delay-2 {
+  0%, 100% { transform: translateY(0px) rotate(-6deg); }
+  50% { transform: translateY(-12px) rotate(-4deg); }
+}
+@keyframes float-delay-3 {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(-1deg); }
+}
+@keyframes float-delay-4 {
+  0%, 100% { transform: translateY(0px) rotate(5deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+}
+
+.floating-1 { animation: float-delay-1 5s ease-in-out infinite; }
+.floating-2 { animation: float-delay-2 6.5s ease-in-out infinite; }
+.floating-3 { animation: float-delay-3 5.8s ease-in-out infinite; }
+.floating-4 { animation: float-delay-4 7s ease-in-out infinite; }
+
+/* Trust Statistics Layout */
+.trust-metric-number {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--yumgo-ink);
+  line-height: 1.1;
+}
+
+/* Testimonial Cards Layout */
+.testimonial-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 768px) {
+  .testimonial-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.testimonial-card {
+  background-color: var(--yumgo-canvas);
+  border: 1px solid var(--yumgo-hairline);
+  box-shadow: var(--shadow-card);
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.testimonial-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Mid Page CTA Banner */
+.mid-cta-banner {
+  background: linear-gradient(135deg, #1A1A2E 0%, #2A2A4E 100%);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.mid-cta-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 60%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 102, 0, 0.15) 0%, rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
+}
+
+/* Support for prefers-reduced-motion (A11y) */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  #heroMainFoodCard, #heroFloatingBadge, .floating-1, .floating-2, .floating-3, .floating-4 {
+    animation: none !important;
+  }
+}
+
+
+

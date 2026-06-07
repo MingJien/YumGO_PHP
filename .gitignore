@@ -1,0 +1,16 @@
+# PHP / Composer
+/vendor/
+composer.lock
+
+# Node / JS
+/node_modules/
+package-lock.json
+
+# Environment variables
+.env
+
+# Agent & System specific files
+.agents/
+.codegraph/
+skills-lock.json
+/YumGO_PHP_remote/

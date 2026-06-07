@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "ecc-universal": "^1.10.0"
+  }
+}
