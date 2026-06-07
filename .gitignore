@@ -13,4 +13,6 @@ package-lock.json
 .agents/
 .codegraph/
 skills-lock.json
+package.json
+agent/
 /YumGO_PHP_remote/
