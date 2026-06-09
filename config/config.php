@@ -21,6 +21,9 @@ if (class_exists('Dotenv\Dotenv') && file_exists(dirname(__DIR__) . '/.env')) {
 define('APP_TIMEZONE', $_ENV['APP_TIMEZONE'] ?? 'Asia/Ho_Chi_Minh');
 date_default_timezone_set(APP_TIMEZONE);
 
+// Đường dẫn thư mục gốc của dự án
+define('PATH_ROOT', dirname(__DIR__));
+
 // Cấu hình Database kết nối PDO từ biến môi trường (fallback về cấu hình mặc định)
 // Hỗ trợ Port (nếu có DB_PORT, ta nối vào host thành 'host;port=xxx' để PDO DSN của TV1 nhận dạng chính xác)
 $dbHost = $_ENV['DB_HOST'] ?? '127.0.0.1';

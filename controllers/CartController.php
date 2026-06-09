@@ -226,6 +226,55 @@ class CartController {
     }
 
     /**
+     * Trả về nội dung Drawer giỏ hàng để update động khi giỏ hàng thay đổi
+     */
+    public function drawer() {
+        $drawerCartItems = [];
+        $drawerSubtotal = 0;
+
+        foreach ($_SESSION['cart'] as $foodId => $item) {
+            $food = $this->foodModel->getById($foodId);
+            if ($food && $food['is_available']) {
+                $finalPrice = $food['price'];
+                if ($food['is_sale']) {
+                    $finalPrice = $food['price'] * (1 - $food['discount_percent'] / 100);
+                }
+
+                $drawerSubtotal += $finalPrice * $item['quantity'];
+                $imageFile = !empty($food['image']) ? $food['image'] : '';
+                $imageExists = false;
+                if ($imageFile !== '') {
+                    $imageExists = file_exists(dirname(__DIR__) . '/uploads/foods/' . $imageFile);
+                }
+                $drawerCartItems[] = [
+                    'food_id' => $food['id'],
+                    'name' => $food['name'],
+                    'image' => $imageFile,
+                    'image_exists' => $imageExists,
+                    'final_price' => number_format($finalPrice, 0, ',', '.') . 'đ',
+                    'quantity' => $item['quantity'],
+                    'item_total' => number_format($finalPrice * $item['quantity'], 0, ',', '.') . 'đ'
+                ];
+            }
+        }
+
+        $cartCount = 0;
+        foreach ($_SESSION['cart'] as $item) {
+            $cartCount += $item['quantity'];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'items' => $drawerCartItems,
+            'subtotal' => number_format($drawerSubtotal, 0, ',', '.') . 'đ',
+            'cart_count' => $cartCount,
+            'is_empty' => empty($drawerCartItems)
+        ]);
+        exit;
+    }
+
+    /**
      * Kiểm tra xem yêu cầu gửi lên là AJAX
      */
     private function isAjax(): bool {

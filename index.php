@@ -73,16 +73,68 @@ switch ($page) {
         $controller->remove();
         break;
 
-    // Các luồng thuộc Thành viên 3 & 4 (Dưới góc độ tích hợp)
+    case 'cart-drawer':
+        require_once __DIR__ . '/controllers/CartController.php';
+        $controller = new CartController($pdo);
+        $controller->drawer();
+        break;
+
     case 'checkout':
+        require_once __DIR__ . '/controllers/OrderController.php';
+        $controller = new OrderController($pdo);
+        $controller->checkout();
+        break;
+
+    case 'process-checkout':
+        require_once __DIR__ . '/controllers/OrderController.php';
+        $controller = new OrderController($pdo);
+        $controller->processCheckout();
+        break;
+
     case 'order-history':
+        require_once __DIR__ . '/controllers/OrderController.php';
+        $controller = new OrderController($pdo);
+        $controller->history();
+        break;
+
+    case 'order-search':
+        require_once __DIR__ . '/controllers/OrderController.php';
+        $controller = new OrderController($pdo);
+        $controller->search();
+        break;
+
+    case 'order-tracking':
+        require_once __DIR__ . '/controllers/OrderController.php';
+        $controller = new OrderController($pdo);
+        $controller->tracking();
+        break;
+
+    case 'cancel-order':
+        require_once __DIR__ . '/controllers/OrderController.php';
+        $controller = new OrderController($pdo);
+        $controller->cancel();
+        break;
+
+    case 'order-edit':
+        require_once __DIR__ . '/controllers/OrderController.php';
+        $controller = new OrderController($pdo);
+        $controller->edit();
+        break;
+
+    case 'order-invoice':
+        require_once __DIR__ . '/controllers/OrderController.php';
+        $controller = new OrderController($pdo);
+        $controller->exportInvoice();
+        break;
+
+    // Các luồng thuộc Thành viên 4 (Dưới góc độ tích hợp)
     case 'admin-dashboard':
         // Hiển thị màn hình chờ tích hợp đẹp mắt cho các chức năng của thành viên khác
         $title = "Đang chờ tích hợp - YumGO";
         require_once __DIR__ . '/views/layouts/header.php';
         
-        $actor = ($page === 'admin-dashboard') ? 'Thành viên 4 (Admin & Shipper)' : 'Thành viên 3 (Checkout & Order)';
-        $featureName = ($page === 'checkout') ? 'Thanh toán đơn hàng (Checkout)' : (($page === 'order-history') ? 'Lịch sử đơn hàng' : 'Bảng điều khiển quản trị (Admin Dashboard)');
+        $actor = 'Thành viên 4 (Admin & Shipper)';
+        $featureName = 'Bảng điều khiển quản trị (Admin Dashboard)';
         
         echo '
         <div class="container py-5 text-center d-flex flex-column align-items-center justify-content-center" style="min-height: 50vh;">

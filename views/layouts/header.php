@@ -107,6 +107,9 @@ $currentPage = isset($_GET['page']) ? trim($_GET['page']) : 'home';
                     <li class="nav-item">
                         <a class="nav-link px-3 fw-medium <?php echo $currentPage === 'foods' ? 'active text-primary' : 'text-secondary'; ?>" href="index.php?page=foods">Thực Đơn</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3 fw-medium <?php echo $currentPage === 'order-search' ? 'active text-primary' : 'text-secondary'; ?>" href="index.php?page=order-search">Tra cứu đơn hàng</a>
+                    </li>
                 </ul>
             </div>
 
@@ -134,7 +137,7 @@ $currentPage = isset($_GET['page']) ? trim($_GET['page']) : 'home';
         </div>
         <div class="drawer-body">
             <!-- If Cart is Empty -->
-            <div x-show="<?php echo empty($drawerCartItems) ? 'true' : 'false'; ?>" class="text-center py-5">
+            <div id="drawerEmptyState" x-show="<?php echo empty($drawerCartItems) ? 'true' : 'false'; ?>" class="text-center py-5">
                 <div class="fs-1 mb-3" style="opacity: 0.5;">🛒</div>
                 <h6 class="fw-bold text-dark">Giỏ hàng đang trống</h6>
                 <p class="body-md text-secondary">Duyệt thực đơn và lựa chọn các món ăn ngon lành từ YumGO nhé!</p>
@@ -144,48 +147,50 @@ $currentPage = isset($_GET['page']) ? trim($_GET['page']) : 'home';
             <!-- If Cart has items -->
             <div x-show="<?php echo !empty($drawerCartItems) ? 'true' : 'false'; ?>" class="d-flex flex-column gap-3" id="drawerCartList">
                 <?php foreach ($drawerCartItems as $item): ?>
-                    <div class="d-flex align-items-center gap-3 py-2 border-bottom" data-food-id="<?php echo $item['food_id']; ?>">
+                    <div class="d-flex align-items-start gap-3 py-2 border-bottom" data-food-id="<?php echo $item['food_id']; ?>">
                         <!-- Food Image -->
                         <div class="rounded-md overflow-hidden flex-shrink-0" style="width: 50px; height: 50px; border: 1px solid var(--yumgo-hairline);">
                             <?php 
                             $imgFile = !empty($item['image']) ? $item['image'] : '';
-                            $imgExists = !empty($imgFile) && file_exists(PATH_ROOT . '/uploads/foods/' . $imgFile);
-                            if ($imgExists): 
+                            if (!empty($imgFile)): 
                             ?>
-                                <img src="uploads/foods/<?php echo $imgFile; ?>" class="w-100 h-100" style="object-fit: cover;">
+                                <img src="uploads/foods/<?php echo htmlspecialchars($imgFile); ?>" class="w-100 h-100" style="object-fit: cover;" alt="<?php echo htmlspecialchars($item['name']); ?>">
                             <?php else: ?>
                                 <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-warning-subtle text-warning font-bold" style="font-size: 18px;">🍔</div>
                             <?php endif; ?>
                         </div>
-                        <!-- Info -->
-                        <div class="flex-grow-1 min-w-0">
-                            <h6 class="title-md text-truncate m-0 text-dark" style="font-size: 14px;"><?php echo htmlspecialchars($item['name']); ?></h6>
-                            <span class="price-display text-primary body-md" style="font-size: 13px; font-weight: 700;"><?php echo number_format($item['final_price'], 0, ',', '.'); ?>đ</span>
-                            <!-- Quantity Controls -->
-                            <div class="d-flex align-items-center gap-2 mt-1">
-                                <form action="index.php?page=cart-update" method="POST" class="m-0">
-                                    <input type="hidden" name="food_id" value="<?php echo $item['food_id']; ?>">
-                                    <input type="hidden" name="quantity" value="<?php echo $item['quantity'] - 1; ?>">
-                                    <button type="submit" class="btn btn-sm btn-light border rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 11px;">-</button>
-                                </form>
-                                <span class="body-md fw-bold px-1" style="font-size: 13px; color: var(--yumgo-ink);"><?php echo $item['quantity']; ?></span>
-                                <form action="index.php?page=cart-update" method="POST" class="m-0">
-                                    <input type="hidden" name="food_id" value="<?php echo $item['food_id']; ?>">
-                                    <input type="hidden" name="quantity" value="<?php echo $item['quantity'] + 1; ?>">
-                                    <button type="submit" class="btn btn-sm btn-light border rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 11px;">+</button>
-                                </form>
-                              </div>
+
+                        <div class="flex-grow-1 min-w-0 d-flex flex-column gap-2">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <h6 class="title-md text-truncate m-0 text-dark" style="font-size: 14px; line-height: 1.2; max-width: calc(100% - 40px);"><?php echo htmlspecialchars($item['name']); ?></h6>
+                                <a href="index.php?page=cart-remove&id=<?php echo $item['food_id']; ?>" class="text-muted p-2 flex-shrink-0" title="Xóa món">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center gap-2">
+                                <span class="price-display text-primary body-md" style="font-size: 13px; font-weight: 700;"><?php echo number_format($item['final_price'], 0, ',', '.'); ?>đ</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <form action="index.php?page=cart-update" method="POST" class="m-0">
+                                        <input type="hidden" name="food_id" value="<?php echo $item['food_id']; ?>">
+                                        <input type="hidden" name="quantity" value="<?php echo $item['quantity'] - 1; ?>">
+                                        <button type="submit" class="btn btn-sm btn-light border rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 11px;">-</button>
+                                    </form>
+                                    <span class="body-md fw-bold px-1" style="font-size: 13px; color: var(--yumgo-ink);"><?php echo $item['quantity']; ?></span>
+                                    <form action="index.php?page=cart-update" method="POST" class="m-0">
+                                        <input type="hidden" name="food_id" value="<?php echo $item['food_id']; ?>">
+                                        <input type="hidden" name="quantity" value="<?php echo $item['quantity'] + 1; ?>">
+                                        <button type="submit" class="btn btn-sm btn-light border rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 11px;">+</button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        <!-- Delete Button -->
-                        <a href="index.php?page=cart-remove&id=<?php echo $item['food_id']; ?>" class="text-muted p-2" title="Xóa món">
-                            <i class="bi bi-trash"></i>
-                        </a>
                     </div>
                 <?php endforeach; ?>
             </div>
         </div>
         
-        <div x-show="<?php echo !empty($drawerCartItems) ? 'true' : 'false'; ?>" class="drawer-footer">
+        <div id="drawerFooter" x-show="<?php echo !empty($drawerCartItems) ? 'true' : 'false'; ?>" class="drawer-footer">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <span class="body-md text-secondary">Tổng tạm tính:</span>
                 <span class="price-display text-primary fs-5" id="drawerSubtotal"><?php echo number_format($drawerSubtotal, 0, ',', '.'); ?>đ</span>
@@ -224,6 +229,9 @@ $currentPage = isset($_GET['page']) ? trim($_GET['page']) : 'home';
             <div class="d-flex flex-column gap-2">
                 <a href="index.php?page=checkout" class="nav-link py-2 px-3 text-secondary rounded-md body-md">
                     <i class="bi bi-credit-card me-2"></i>Thanh Toán
+                </a>
+                <a href="index.php?page=order-search" class="nav-link py-2 px-3 text-secondary rounded-md body-md">
+                    <i class="bi bi-search me-2"></i>Tra cứu Đơn Hàng
                 </a>
                 <a href="index.php?page=order-history" class="nav-link py-2 px-3 text-secondary rounded-md body-md">
                     <i class="bi bi-clock-history me-2"></i>Lịch Sử Đơn Hàng

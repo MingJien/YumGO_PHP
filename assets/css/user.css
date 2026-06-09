@@ -439,6 +439,66 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 1;
   pointer-events: auto;
 }
+
+/* Ensure SweetAlert2 confirmation appears above drawer/menu overlays */
+body > .swal2-container,
+body > .swal2-backdrop,
+body > .swal2-popup,
+body > .swal2-container-high,
+body > .swal2-backdrop-high,
+body > .swal2-popup-high,
+.swal2-container,
+.swal2-backdrop,
+.swal2-popup,
+.swal2-container-high,
+.swal2-backdrop-high,
+.swal2-popup-high {
+  z-index: 9999999999 !important;
+}
+
+body > .swal2-container,
+body > .swal2-backdrop,
+body > .swal2-container-high,
+body > .swal2-backdrop-high {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: auto !important;
+}
+
+.swal2-popup,
+.swal2-popup-high {
+  position: relative !important;
+  z-index: 9999999999 !important;
+  pointer-events: auto !important;
+}
+
+.swal2-backdrop,
+.swal2-backdrop-high {
+  z-index: 9999999998 !important;
+}
+
+.swal2-popup.toast-sm {
+  width: auto !important;
+  max-width: 320px !important;
+  min-width: 240px !important;
+  padding: 0.9rem 1rem !important;
+  font-size: 0.95rem !important;
+}
+
+.swal2-popup.toast-sm .swal2-title {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  margin: 0 !important;
+}
+
+.swal2-popup.toast-sm .swal2-icon {
+  margin-right: 0.5rem !important;
+}
+
 .drawer-header {
   border-bottom: 1px solid var(--yumgo-hairline);
   padding: 16px 20px;

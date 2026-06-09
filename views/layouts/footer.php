@@ -38,6 +38,7 @@ $currentPage = isset($_GET['page']) ? trim($_GET['page']) : 'home';
                     <ul class="list-unstyled d-flex flex-column gap-2 body-md">
                         <li><a href="index.php?page=home" class="text-secondary text-decoration-none hover-primary">Trang Chủ</a></li>
                         <li><a href="index.php?page=foods" class="text-secondary text-decoration-none hover-primary">Thực Đơn</a></li>
+                        <li><a href="index.php?page=order-search" class="text-secondary text-decoration-none hover-primary">Tra cứu Đơn Hàng</a></li>
                         <li><a href="index.php?page=cart" class="text-secondary text-decoration-none hover-primary">Giỏ Hàng (<?php echo $footerCartCount; ?>)</a></li>
                     </ul>
                 </div>
