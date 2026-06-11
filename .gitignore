@@ -1,0 +1,23 @@
+# PHP / Composer
+/vendor/
+composer.lock
+
+# Node / JS
+/node_modules/
+package-lock.json
+
+# Environment variables
+.env
+
+# Agent & System specific files
+.agents/
+.codegraph/
+skills-lock.json
+package.json
+agent/
+/YumGO_PHP_remote/
+/storage/
+
+# Documentation & temporary files
+/docs/TechnicalAnalysis_ThanhVien2.md
+/scratch_cart_extracted.js
