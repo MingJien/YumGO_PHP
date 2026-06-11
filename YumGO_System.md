@@ -2,7 +2,7 @@ YUMGO
 ĐẶC TẢ HỆ THỐNG
 WEBSITE ĐẶT ĐỒ ĂN ONLINE PHP + MYSQL 
  1. TỔNG QUAN DỰ ÁN
-Tên ứng dụng: YumGO
+Tên ứng dụng: YumGo
 Ý nghĩa:
 Yum = ngon
 GO = nhanh, giao nhanh
@@ -154,18 +154,18 @@ shipper_phone
 created_at 
 updated_at
  TRẠNG THÁI ĐƠN HÀNG 
-Placed
- Preparing
- Ready 
-Delivering 
-Delivered 
+Đã đặt
+ Đang chuẩn bị
+ Sẵn sàng giao 
+Đang giao 
+Đã giao 
 Cancelled By User 
 Cancelled By Admin
 
 LƯU Ý QUAN TRỌNG
 Database luôn lưu:
 trạng thái cuối cùng hiện tại của đơn hàng
-Ví dụ: Delivered hoặc Cancelled By User
+Ví dụ: Đã giao hoặc Khách đã hủy
 KHÔNG xóa order thật khỏi DB.
 
  5.5 BẢNG ORDER_ITEMS 
@@ -237,19 +237,19 @@ KHÔNG triển khai:
 bản đồ
 8. LUỒNG NGHIỆP VỤ HỆ THỐNG 
  8.1 LUỒNG ĐẶT HÀNG 
-Xem món → Thêm giỏ hàng → Checkout → Nhập voucher → Tạo đơn → Admin xử lý → Ready → Shipper nhận giao → Delivering → Delivered
+Xem món → Thêm giỏ hàng → Checkout → Nhập voucher → Tạo đơn → Admin xử lý → Sẵn sàng giao → Shipper nhận giao → Đang giao → Đã giao
  8.2 LUỒNG SHIPPER
-Khi: status = Ready
+Khi: status = Sẵn sàng giao
 Đơn xuất hiện ở: Delivery Board
 Shipper nhấn: Accept Delivery
 Hệ thống update:
 shipper_name
 shipper_phone
-status = Delivering
+status = Đang giao
 8.3 LUỒNG HỦY ĐƠN
 User: chỉ được hủy khi:
-Placed
-Preparing
+Đã đặt
+Đang chuẩn bị
 Admin: có thể hủy mọi lúc
  8.4 LUỒNG SỬA ĐƠN 
 User chỉ được sửa:
@@ -263,7 +263,7 @@ KHÔNG được sửa:
 quantity
 order status
  ĐIỀU KIỆN SỬA
-status = Placed
+status = Đã đặt
 AND
 edit_count < 2
 AND
