@@ -1,57 +1,45 @@
 <?php
 /**
- * YumGO - Controller điều phối Giỏ hàng (Session Cart)
+ * YumGO - Controller điều phối giỏ hàng bằng session và lưu theo tài khoản user.
  */
 
-// Chặn truy cập trực tiếp
 if (count(get_included_files()) === 1) {
     http_response_code(403);
     exit('Direct access not permitted.');
 }
 
 require_once dirname(__DIR__) . '/models/Food.php';
+require_once dirname(__DIR__) . '/models/UserCart.php';
 
 class CartController {
-    private $foodModel;
+    private Food $foodModel;
+    private UserCart $userCartModel;
+    private string $errorRedirectPage = 'index.php?page=cart';
 
-    /**
-     * Khởi tạo Controller với kết nối database
-     * @param PDO $pdo Đối tượng kết nối CSDL
-     */
     public function __construct(PDO $pdo) {
         $this->foodModel = new Food($pdo);
-        
-        // Đảm bảo Session đã được khởi chạy
+        $this->userCartModel = new UserCart($pdo);
+
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-        
-        // Khởi tạo giỏ hàng nếu chưa tồn tại
-        if (!isset($_SESSION['cart'])) {
+
+        if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
             $_SESSION['cart'] = [];
         }
     }
 
-    /**
-     * Hiển thị trang Giỏ hàng
-     */
-    public function index() {
+    public function index(): void {
         $cartItems = [];
         $subtotal = 0;
 
-        // Đọc dữ liệu giỏ hàng từ Session và truy vấn thông tin mới nhất từ CSDL
         foreach ($_SESSION['cart'] as $foodId => $item) {
-            $food = $this->foodModel->getById($foodId);
-            
-            // Chỉ hiển thị món ăn tồn tại, chưa bị xóa và còn hàng bán
-            if ($food && $food['is_available']) {
-                // Tính giá bán thực tế sau giảm giá (nếu có)
-                $finalPrice = $food['price'];
-                if ($food['is_sale']) {
-                    $finalPrice = $food['price'] * (1 - $food['discount_percent'] / 100);
-                }
-                
-                $itemTotal = $finalPrice * $item['quantity'];
+            $food = $this->foodModel->getById((int)$foodId);
+            $quantity = (int)($item['quantity'] ?? 0);
+
+            if ($food && $food['is_available'] && $quantity > 0) {
+                $finalPrice = $this->getFinalPrice($food);
+                $itemTotal = $finalPrice * $quantity;
                 $subtotal += $itemTotal;
 
                 $cartItems[] = [
@@ -62,46 +50,40 @@ class CartController {
                     'is_sale' => $food['is_sale'],
                     'discount_percent' => $food['discount_percent'],
                     'final_price' => $finalPrice,
-                    'quantity' => $item['quantity'],
+                    'quantity' => $quantity,
                     'item_total' => $itemTotal
                 ];
             } else {
-                // Tự động loại bỏ món khỏi giỏ hàng nếu nó đã bị ẩn/xóa trên CSDL
                 unset($_SESSION['cart'][$foodId]);
             }
         }
 
-        $title = "Giỏ Hàng Của Bạn - YumGO";
+        $this->persistCartForCurrentUser();
 
-        // Nhúng Layout và View tương ứng theo Integration Contract
+        $cartSuggestionFoods = $this->foodModel->getCartSuggestions(array_keys($_SESSION['cart']), 4);
+        $title = 'Giỏ hàng của bạn - YumGO';
+
         require_once dirname(__DIR__) . '/views/layouts/header.php';
         require_once dirname(__DIR__) . '/views/user/cart.php';
         require_once dirname(__DIR__) . '/views/layouts/footer.php';
     }
 
-    /**
-     * Thêm món ăn vào giỏ hàng
-     */
-    public function add() {
-        // 1. Nhận dữ liệu đầu vào
+    public function add(): void {
         $foodId = isset($_POST['food_id']) ? filter_var($_POST['food_id'], FILTER_VALIDATE_INT) : 0;
         $quantity = isset($_POST['quantity']) ? filter_var($_POST['quantity'], FILTER_VALIDATE_INT) : 1;
 
-        // 2. Xác thực dữ liệu (Bảo mật: chặn số lượng âm, số lượng rỗng)
         if ($foodId <= 0 || $quantity <= 0) {
-            $this->redirectWithError("Số lượng món ăn không hợp lệ.");
+            $this->redirectWithError('Số lượng món ăn không hợp lệ.');
         }
 
-        // 3. Kiểm tra món ăn trong CSDL
         $food = $this->foodModel->getById($foodId);
         if (!$food) {
-            $this->redirectWithError("Món ăn không tồn tại hoặc đã bị xóa.");
+            $this->redirectWithError('Món ăn không tồn tại hoặc đã bị xóa.');
         }
         if (!$food['is_available']) {
-            $this->redirectWithError("Món ăn này hiện đang tạm hết hàng.");
+            $this->redirectWithError('Món ăn này hiện đang tạm hết hàng.');
         }
 
-        // 4. Thực hiện thêm/cập nhật vào Session
         if (isset($_SESSION['cart'][$foodId])) {
             $_SESSION['cart'][$foodId]['quantity'] += $quantity;
         } else {
@@ -111,190 +93,209 @@ class CartController {
             ];
         }
 
-        // 5. Trả về phản hồi dựa theo hình thức yêu cầu (AJAX hoặc Direct Link)
+        $this->persistCartForCurrentUser();
+
         if ($this->isAjax()) {
-            $cartCount = 0;
-            if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
-                foreach ($_SESSION['cart'] as $item) {
-                    $cartCount += $item['quantity'];
-                }
-            }
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => true,
-                'message' => "Đã thêm " . htmlspecialchars($food['name']) . " vào giỏ hàng!",
-                'cart_count' => $cartCount
-            ]);
-            exit;
+            $this->jsonSuccess('Đã thêm ' . $food['name'] . ' vào giỏ hàng.');
         }
 
-        // Chuyển hướng về trang giỏ hàng nếu gửi form thường
-        header("Location: index.php?page=cart&msg=added");
+        header('Location: index.php?page=cart&msg=added');
         exit;
     }
 
-    /**
-     * Cập nhật số lượng món ăn trong giỏ hàng (Gọi bằng POST từ form hoặc AJAX)
-     */
-    public function update() {
+    public function update(): void {
         $foodId = isset($_POST['food_id']) ? filter_var($_POST['food_id'], FILTER_VALIDATE_INT) : 0;
         $quantity = isset($_POST['quantity']) ? filter_var($_POST['quantity'], FILTER_VALIDATE_INT) : 0;
 
         if ($foodId <= 0) {
-            $this->redirectWithError("Món ăn không hợp lệ.");
+            $this->redirectWithError('Món ăn không hợp lệ.');
         }
 
         if ($quantity <= 0) {
-            // Nếu số lượng <= 0, thực hiện xóa món ăn khỏi giỏ hàng
             unset($_SESSION['cart'][$foodId]);
         } else {
-            // Kiểm tra tính khả dụng của món ăn
             $food = $this->foodModel->getById($foodId);
             if (!$food || !$food['is_available']) {
                 unset($_SESSION['cart'][$foodId]);
-                $this->redirectWithError("Món ăn hiện không khả dụng để đặt hàng.");
+                $this->persistCartForCurrentUser();
+                $this->redirectWithError('Món ăn hiện không khả dụng để đặt hàng.');
             }
-            
-            $_SESSION['cart'][$foodId]['quantity'] = $quantity;
+
+            $_SESSION['cart'][$foodId] = [
+                'food_id' => $foodId,
+                'quantity' => $quantity
+            ];
         }
 
-        // Trả về kết quả AJAX hoặc redirect
+        $this->persistCartForCurrentUser();
+
         if ($this->isAjax()) {
-            $cartCount = 0;
-            $subtotal = 0;
+            $summary = $this->buildCartSummary();
             $itemTotal = 0;
-            foreach ($_SESSION['cart'] as $fid => $item) {
-                $f = $this->foodModel->getById($fid);
-                if ($f && $f['is_available']) {
-                    $price = $f['is_sale'] ? ($f['price'] * (1 - $f['discount_percent']/100)) : $f['price'];
-                    $subtotal += $price * $item['quantity'];
-                    $cartCount += $item['quantity'];
-                    if ($fid === $foodId) {
-                        $itemTotal = $price * $item['quantity'];
-                    }
+            if (isset($_SESSION['cart'][$foodId])) {
+                $food = $this->foodModel->getById($foodId);
+                if ($food) {
+                    $itemTotal = $this->getFinalPrice($food) * (int)$_SESSION['cart'][$foodId]['quantity'];
                 }
             }
-            header('Content-Type: application/json');
+
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
                 'success' => true,
-                'message' => "Đã cập nhật số lượng thành công!",
-                'cart_count' => $cartCount,
-                'item_total' => number_format($itemTotal, 0, ',', '.') . 'đ',
-                'subtotal' => number_format($subtotal, 0, ',', '.') . 'đ',
-                'is_removed' => !isset($_SESSION['cart'][$foodId])
-            ]);
+                'message' => 'Đã cập nhật số lượng thành công.',
+                'cart_count' => $summary['cart_count'],
+                'item_total' => $this->formatMoney($itemTotal),
+                'subtotal' => $summary['subtotal_formatted'],
+                'is_removed' => !isset($_SESSION['cart'][$foodId]),
+                'drawer_items' => $summary['drawer_items']
+            ], JSON_UNESCAPED_UNICODE);
             exit;
         }
 
-        header("Location: index.php?page=cart&msg=updated");
+        header('Location: index.php?page=cart&msg=updated');
         exit;
     }
 
-    /**
-     * Xóa một món ăn khỏi giỏ hàng
-     */
-    public function remove() {
+    public function remove(): void {
         $foodId = isset($_GET['id']) ? filter_var($_GET['id'], FILTER_VALIDATE_INT) : 0;
 
         if ($foodId > 0 && isset($_SESSION['cart'][$foodId])) {
             unset($_SESSION['cart'][$foodId]);
         }
 
+        $this->persistCartForCurrentUser();
+
         if ($this->isAjax()) {
-            $cartCount = 0;
-            $subtotal = 0;
-            foreach ($_SESSION['cart'] as $fid => $item) {
-                $f = $this->foodModel->getById($fid);
-                if ($f && $f['is_available']) {
-                    $price = $f['is_sale'] ? ($f['price'] * (1 - $f['discount_percent']/100)) : $f['price'];
-                    $subtotal += $price * $item['quantity'];
-                    $cartCount += $item['quantity'];
-                }
-            }
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => true,
-                'message' => "Đã xóa món ăn khỏi giỏ hàng!",
-                'cart_count' => $cartCount,
-                'subtotal' => number_format($subtotal, 0, ',', '.') . 'đ'
-            ]);
-            exit;
+            $this->jsonSuccess('Đã xóa món ăn khỏi giỏ hàng.');
         }
 
-        header("Location: index.php?page=cart&msg=removed");
+        header('Location: index.php?page=cart&msg=removed');
         exit;
     }
 
-    /**
-     * Trả về nội dung Drawer giỏ hàng để update động khi giỏ hàng thay đổi
-     */
-    public function drawer() {
-        $drawerCartItems = [];
-        $drawerSubtotal = 0;
+    public function drawer(): void {
+        $summary = $this->buildCartSummary();
 
-        foreach ($_SESSION['cart'] as $foodId => $item) {
-            $food = $this->foodModel->getById($foodId);
-            if ($food && $food['is_available']) {
-                $finalPrice = $food['price'];
-                if ($food['is_sale']) {
-                    $finalPrice = $food['price'] * (1 - $food['discount_percent'] / 100);
-                }
-
-                $drawerSubtotal += $finalPrice * $item['quantity'];
-                $imageFile = !empty($food['image']) ? $food['image'] : '';
-                $imageExists = false;
-                if ($imageFile !== '') {
-                    $imageExists = file_exists(dirname(__DIR__) . '/uploads/foods/' . $imageFile);
-                }
-                $drawerCartItems[] = [
-                    'food_id' => $food['id'],
-                    'name' => $food['name'],
-                    'image' => $imageFile,
-                    'image_exists' => $imageExists,
-                    'final_price' => number_format($finalPrice, 0, ',', '.') . 'đ',
-                    'quantity' => $item['quantity'],
-                    'item_total' => number_format($finalPrice * $item['quantity'], 0, ',', '.') . 'đ'
-                ];
-            }
-        }
-
-        $cartCount = 0;
-        foreach ($_SESSION['cart'] as $item) {
-            $cartCount += $item['quantity'];
-        }
-
-        header('Content-Type: application/json');
+        header('Content-Type: application/json; charset=utf-8');
         echo json_encode([
             'success' => true,
-            'items' => $drawerCartItems,
-            'subtotal' => number_format($drawerSubtotal, 0, ',', '.') . 'đ',
-            'cart_count' => $cartCount,
-            'is_empty' => empty($drawerCartItems)
-        ]);
+            'items' => $summary['drawer_items'],
+            'subtotal' => $summary['subtotal_formatted'],
+            'cart_count' => $summary['cart_count'],
+            'is_empty' => empty($summary['drawer_items']),
+        ], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
-    /**
-     * Kiểm tra xem yêu cầu gửi lên là AJAX
-     */
+    private function jsonSuccess(string $message): void {
+        $summary = $this->buildCartSummary();
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => true,
+            'message' => $message,
+            'cart_count' => $summary['cart_count'],
+            'subtotal' => $summary['subtotal_formatted'],
+            'drawer_items' => $summary['drawer_items']
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    private function buildCartSummary(): array {
+        $cartCount = 0;
+        $subtotal = 0;
+        $drawerItems = [];
+
+        foreach ($_SESSION['cart'] as $foodId => $item) {
+            $food = $this->foodModel->getById((int)$foodId);
+            $quantity = (int)($item['quantity'] ?? 0);
+
+            if (!$food || !$food['is_available'] || $quantity <= 0) {
+                unset($_SESSION['cart'][$foodId]);
+                continue;
+            }
+
+            $finalPrice = $this->getFinalPrice($food);
+            $itemTotal = $finalPrice * $quantity;
+            $subtotal += $itemTotal;
+            $cartCount += $quantity;
+
+            $drawerItems[] = [
+                'food_id' => (int)$food['id'],
+                'name' => $food['name'],
+                'image_url' => $this->foodImageUrl($food),
+                'final_price' => $this->formatMoney($finalPrice),
+                'quantity' => $quantity,
+                'item_total' => $this->formatMoney($itemTotal),
+                'remove_url' => 'index.php?page=cart-remove&id=' . (int)$food['id'],
+            ];
+        }
+
+        $this->persistCartForCurrentUser();
+
+        return [
+            'cart_count' => $cartCount,
+            'subtotal' => $subtotal,
+            'subtotal_formatted' => $this->formatMoney($subtotal),
+            'drawer_items' => $drawerItems,
+        ];
+    }
+
+    private function persistCartForCurrentUser(): void {
+        if (($_SESSION['role'] ?? null) !== 'user' || empty($_SESSION['user']['id'])) {
+            return;
+        }
+
+        $cart = isset($_SESSION['cart']) && is_array($_SESSION['cart']) ? $_SESSION['cart'] : [];
+        try {
+            $this->userCartModel->replaceCart((int)$_SESSION['user']['id'], $cart);
+        } catch (Throwable $exception) {
+            error_log('Could not persist user cart: ' . $exception->getMessage());
+        }
+    }
+
+    private function getFinalPrice(array $food): float {
+        $price = (float)$food['price'];
+
+        if (!empty($food['is_sale'])) {
+            $price *= (1 - ((float)$food['discount_percent'] / 100));
+        }
+
+        return $price;
+    }
+
+    private function foodImageUrl(array $food): ?string {
+        $image = !empty($food['image']) ? (string)$food['image'] : '';
+        if ($image === '') {
+            return null;
+        }
+
+        $path = dirname(__DIR__) . '/uploads/foods/' . $image;
+        if (!file_exists($path)) {
+            return null;
+        }
+
+        return 'uploads/foods/' . rawurlencode($image);
+    }
+
+    private function formatMoney(float $value): string {
+        return number_format($value, 0, ',', '.') . 'đ';
+    }
+
     private function isAjax(): bool {
-        return (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
-            || isset($_POST['ajax']) 
+        return (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || isset($_POST['ajax'])
             || isset($_GET['ajax']);
     }
 
-    /**
-     * Hàm phụ trợ chuyển hướng kèm thông báo lỗi
-     */
-    private $errorRedirectPage = 'index.php?page=cart';
-    private function redirectWithError(string $message) {
+    private function redirectWithError(string $message): void {
         if ($this->isAjax()) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => $message]);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => $message], JSON_UNESCAPED_UNICODE);
             exit;
         }
         $_SESSION['cart_error'] = $message;
-        header("Location: " . $this->errorRedirectPage);
+        header('Location: ' . $this->errorRedirectPage);
         exit;
     }
 }

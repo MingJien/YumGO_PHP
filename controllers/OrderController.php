@@ -159,9 +159,50 @@ class OrderController {
         require_once 'models/Order.php';
         $orderModel = new Order($this->pdo);
 
-        // Đọc danh sách mã đơn hàng từ session
+        $phone = isset($_GET['phone']) ? trim($_GET['phone']) : '';
+        if ($phone === '' && isset($_SESSION['role']) && $_SESSION['role'] === 'user' && !empty($_SESSION['user']['phone'])) {
+            $phone = trim($_SESSION['user']['phone']);
+        }
+
+        $page = isset($_GET['p']) ? max(1, (int)$_GET['p']) : 1;
+        $status = isset($_GET['status']) ? trim($_GET['status']) : 'all';
+        $time = isset($_GET['time']) ? trim($_GET['time']) : 'all';
+        $sort = isset($_GET['sort']) ? trim($_GET['sort']) : 'date_desc';
+        $q = isset($_GET['q']) ? trim($_GET['q']) : '';
+
+        // Validate whitelist
+        if (!in_array($status, ['all', 'processing', 'delivering', 'completed', 'cancelled'])) {
+            $status = 'all';
+        }
+        if (!in_array($time, ['all', '30days', '3months', '6months'])) {
+            $time = 'all';
+        }
+        if (!in_array($sort, ['date_desc', 'date_asc', 'price_desc', 'price_asc'])) {
+            $sort = 'date_desc';
+        }
+
+        $limit = 10;
+        $offset = ($page - 1) * $limit;
+        $totalOrders = 0;
+        $totalPages = 1;
+        $orders = [];
+
         $historyCodes = $_SESSION['order_history'] ?? [];
-        $orders = $orderModel->getByOrderCodes($historyCodes);
+        
+        // Fetch stats dashboard
+        $stats = $orderModel->getStats($phone, $historyCodes);
+
+        if ($phone !== '' || !empty($historyCodes)) {
+            $totalOrders = $orderModel->getFilteredOrdersCount($phone, $historyCodes, $status, $time, $q);
+            $totalPages = (int)ceil($totalOrders / $limit);
+            $orders = $orderModel->getFilteredOrders($phone, $historyCodes, $offset, $limit, $status, $time, $sort, $q);
+            
+            // Attach food items to each order
+            foreach ($orders as &$o) {
+                $o['items'] = $orderModel->getItems($o['id']);
+            }
+            unset($o);
+        }
 
         include 'views/user/order-history.php';
     }
@@ -178,28 +219,61 @@ class OrderController {
         $orderModel = new Order($this->pdo);
 
         $code = $_GET['code'] ?? '';
-        $phone = trim($_GET['phone'] ?? '');
+        $phoneInput = trim($_REQUEST['phone'] ?? '');
         $order = null;
         $items = [];
+        $errorMsg = '';
+        $requiresVerification = false;
 
         if ($code) {
             $order = $orderModel->getByOrderCode($code);
             if ($order) {
-                if ($phone !== '' && $order['phone'] !== $phone) {
-                    $order = null;
-                }
-            }
+                $isAuthorized = false;
 
-            if ($order) {
-                // Lấy chi tiết món ăn trong đơn hàng
-                $items = $orderModel->getItems($order['id']);
-                
-                // Nếu tìm thấy đơn, lưu bổ sung vào lịch sử (nếu người dùng tra cứu từ tab ẩn danh hoặc máy khác)
-                if (!isset($_SESSION['order_history'])) {
-                    $_SESSION['order_history'] = [];
+                // 1. Session authorization (already verified or placed in this session)
+                if (isset($_SESSION['order_history']) && in_array($code, $_SESSION['order_history'])) {
+                    $isAuthorized = true;
                 }
-                if (!in_array($code, $_SESSION['order_history'])) {
-                    $_SESSION['order_history'][] = $code;
+                // 2. Logged-in user matching order phone
+                elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'user' && !empty($_SESSION['user']['phone']) && trim($_SESSION['user']['phone']) === trim($order['phone'])) {
+                    $isAuthorized = true;
+                }
+
+                // If not authorized, try verifying with the provided phone input
+                if (!$isAuthorized && $phoneInput !== '') {
+                    if (trim($order['phone']) === $phoneInput) {
+                        if (!isset($_SESSION['order_history'])) {
+                            $_SESSION['order_history'] = [];
+                        }
+                        if (!in_array($code, $_SESSION['order_history'])) {
+                            $_SESSION['order_history'][] = $code;
+                        }
+                        $isAuthorized = true;
+                    } else {
+                        $errorMsg = 'Số điện thoại không chính xác. Vui lòng nhập lại!';
+                        $requiresVerification = true;
+                    }
+                }
+
+                // If authorized and phone was sent in the request (GET or POST),
+                // redirect to clean URL to strip the phone number immediately.
+                if ($isAuthorized && $phoneInput !== '') {
+                    header("Location: index.php?page=order-tracking&code=" . urlencode($code));
+                    exit;
+                }
+
+                if (!$isAuthorized) {
+                    $requiresVerification = true;
+                } else {
+                    $items = $orderModel->getItems($order['id']);
+                    
+                    // Keep session synced
+                    if (!isset($_SESSION['order_history'])) {
+                        $_SESSION['order_history'] = [];
+                    }
+                    if (!in_array($code, $_SESSION['order_history'])) {
+                        $_SESSION['order_history'][] = $code;
+                    }
                 }
             }
         }
@@ -287,5 +361,83 @@ class OrderController {
         
         // Xuất file PDF (attachment = false để xem trực tiếp trên trình duyệt, = true để tải về)
         $dompdf->stream("hoadon_yumgo_" . $order['order_code'] . ".pdf", array("Attachment" => false));
+    }
+
+    public function reorder() {
+        $code = $_GET['code'] ?? '';
+        if (!$code) {
+            header("Location: index.php?page=home");
+            exit;
+        }
+
+        require_once 'models/Order.php';
+        $orderModel = new Order($this->pdo);
+        $order = $orderModel->getByOrderCode($code);
+        if (!$order) {
+            header("Location: index.php?page=home");
+            exit;
+        }
+
+        // Verify authorization (same as order-tracking verification)
+        $isAuthorized = false;
+        if (isset($_SESSION['order_history']) && in_array($code, $_SESSION['order_history'])) {
+            $isAuthorized = true;
+        } elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'user' && !empty($_SESSION['user']['phone']) && trim($_SESSION['user']['phone']) === trim($order['phone'])) {
+            $isAuthorized = true;
+        }
+
+        if (!$isAuthorized) {
+            header("Location: index.php?page=order-tracking&code=" . urlencode($code));
+            exit;
+        }
+
+        $mode = $_GET['mode'] ?? 'merge';
+        if (!in_array($mode, ['replace', 'merge'], true)) {
+            $mode = 'merge';
+        }
+
+        $items = $orderModel->getItems($order['id']);
+        if (!empty($items)) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            if ($mode === 'replace') {
+                $_SESSION['cart'] = [];
+            } elseif (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
+                $_SESSION['cart'] = [];
+            }
+
+            require_once 'models/Food.php';
+            $foodModel = new Food($this->pdo);
+
+            foreach ($items as $item) {
+                $foodId = (int)$item['food_id'];
+                $quantity = (int)$item['quantity'];
+
+                // Verify the food is still available and not deleted
+                $food = $foodModel->getById($foodId);
+                if ($food && $food['is_available'] && !$food['is_deleted']) {
+                    // Ghi đè số lượng từ đơn hàng cũ lên giỏ hàng (thay vì cộng dồn +=) để tránh chồng chất
+                    $_SESSION['cart'][$foodId] = [
+                        'food_id' => $foodId,
+                        'quantity' => $quantity
+                    ];
+                }
+            }
+
+            // Sync user cart to database if logged in
+            if (isset($_SESSION['role']) && $_SESSION['role'] === 'user' && !empty($_SESSION['user']['id'])) {
+                require_once 'models/UserCart.php';
+                try {
+                    $userCartModel = new UserCart($this->pdo);
+                    $userCartModel->replaceCart((int)$_SESSION['user']['id'], $_SESSION['cart']);
+                } catch (Throwable $exception) {
+                    error_log('Could not persist reordered user cart: ' . $exception->getMessage());
+                }
+            }
+        }
+
+        header("Location: index.php?page=cart&msg=added");
+        exit;
     }
 }

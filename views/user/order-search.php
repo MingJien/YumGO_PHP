@@ -16,7 +16,7 @@ require_once 'views/layouts/header.php';
 
                         <div class="col-md-6">
                             <label for="orderCode" class="form-label">Mã đơn hàng</label>
-                            <input type="text" id="orderCode" name="code" class="form-control" placeholder="VD: YGO-20240609-1234" required>
+                            <input type="text" id="orderCode" name="code" class="form-control" placeholder="VD: YUMGO-20260609-1234" required>
                         </div>
 
                         <div class="col-md-6">

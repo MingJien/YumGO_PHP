@@ -1,9 +1,4 @@
 <?php
-/**
- * YumGO - Footer Layout dùng chung
- */
-
-// Đảm bảo Session đã được khởi chạy để đọc Giỏ hàng
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -11,61 +6,58 @@ if (session_status() === PHP_SESSION_NONE) {
 $footerCartCount = 0;
 if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
     foreach ($_SESSION['cart'] as $item) {
-        $footerCartCount += $item['quantity'];
+        $footerCartCount += (int)$item['quantity'];
     }
 }
-
-$currentPage = isset($_GET['page']) ? trim($_GET['page']) : 'home';
 ?>
     </main>
 
-    <!-- Desktop Footer (≥ 992px) -->
-    <footer class="bg-canvas border-top py-5 d-none d-lg-block mt-auto">
-        <div class="container">
-            <div class="row gy-4">
-                <!-- Brand Info -->
-                <div class="col-lg-4">
-                    <span class="fs-4 fw-bold" style="color: var(--yumgo-primary);">
-                        Yum<span style="color: var(--yumgo-ink);">GO</span>
-                    </span>
-                    <p class="text-secondary mt-3 body-md" style="max-width: 300px;">
-                        Hệ thống đặt món ăn trực tuyến nhanh chóng, mang hương vị nóng hổi đến tận cửa nhà bạn.
-                    </p>
-                </div>
-                <!-- Navigation links -->
-                <div class="col-lg-4">
-                    <h6 class="fw-bold mb-3 text-uppercase">Khám Phá</h6>
-                    <ul class="list-unstyled d-flex flex-column gap-2 body-md">
-                        <li><a href="index.php?page=home" class="text-secondary text-decoration-none hover-primary">Trang Chủ</a></li>
-                        <li><a href="index.php?page=foods" class="text-secondary text-decoration-none hover-primary">Thực Đơn</a></li>
-                        <li><a href="index.php?page=order-search" class="text-secondary text-decoration-none hover-primary">Tra cứu Đơn Hàng</a></li>
-                        <li><a href="index.php?page=cart" class="text-secondary text-decoration-none hover-primary">Giỏ Hàng (<?php echo $footerCartCount; ?>)</a></li>
-                    </ul>
-                </div>
-                <!-- Support Contact -->
-                <div class="col-lg-4">
-                    <h6 class="fw-bold mb-3 text-uppercase">Liên Hệ</h6>
-                    <ul class="list-unstyled d-flex flex-column gap-2 text-secondary body-md">
-                        <li><i class="bi bi-geo-alt me-2"></i> Trường Đại học CNTT</li>
-                        <li><i class="bi bi-telephone me-2"></i> 1900 1234 (Tổng đài hỗ trợ)</li>
-                        <li><i class="bi bi-envelope me-2"></i> support@yumgo.vn</li>
-                    </ul>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <div class="footer-brand-block">
+                <a class="site-brand site-brand-footer" href="index.php?page=home" aria-label="YumGO trang chủ">
+                    <strong><span>Yum</span>GO</strong>
+                </a>
+                <p>Đặt món nhanh, thanh toán gọn, giao bữa ăn nóng tới đúng nơi bạn cần.</p>
+                <div class="footer-socials" aria-label="Mạng xã hội YumGO">
+                    <a href="https://www.facebook.com/" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                    <a href="https://www.instagram.com/" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                    <a href="https://www.tiktok.com/" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
                 </div>
             </div>
-            <hr class="my-4" style="border-color: var(--yumgo-hairline);">
-            <div class="d-flex justify-content-between align-items-center text-secondary body-md">
-                <span>&copy; <?php echo date('Y'); ?> YumGO. Tất cả các quyền được bảo lưu.</span>
-                <span class="fs-7 text-muted">Phát triển bởi Thành viên 2 (User Flow & Web)</span>
+
+            <div>
+                <h6>LIÊN HỆ</h6>
+                <ul>
+                    <li><i class="bi bi-telephone"></i> 1900 1234</li>
+                    <li><i class="bi bi-envelope"></i> support@yumgo.vn</li>
+                    <li><i class="bi bi-geo-alt"></i> Trường Đại học CNTT</li>
+                </ul>
             </div>
+
+            <div>
+                <h6>DỊCH VỤ</h6>
+                <ul>
+                    <li><a href="index.php?page=foods">Thực đơn</a></li>
+                    <li><a href="index.php?page=favorites">Món yêu thích</a></li>
+                    <li><a href="index.php?page=cart">Giỏ hàng (<span class="footer-cart-count"><?php echo $footerCartCount; ?></span>)</a></li>
+                    <li><a href="index.php?page=checkout">Thanh toán</a></li>
+                    <li><a href="index.php?page=order-search">Tra cứu đơn hàng</a></li>
+                    <li><a href="index.php?page=order-history">Lịch sử đơn hàng</a></li>
+                    <li><a href="index.php?page=support">Hỗ trợ</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-image-card">
+                <img src="uploads/banners/hero_combo.png" alt="Món ăn YumGO">
+            </div>
+        </div>
+        <div class="site-footer-quote">
+            “Món ngon đến nhanh, bữa ăn vừa ý.”
         </div>
     </footer>
 
-
-
-    <!-- Bootstrap 5 JS Bundle with Popper (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- YumGO Cart AJAX & Interactions -->
-    <script src="assets/js/cart.js"></script>
+    <script src="assets/js/cart.js?v=20260608-cartpersist2"></script>
 </body>
 </html>

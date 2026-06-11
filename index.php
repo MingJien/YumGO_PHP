@@ -1,60 +1,126 @@
 <?php
 /**
- * YumGO - Điểm khởi tạo và Điều hướng chính (Main Router)
- * Tệp này điều phối mọi yêu cầu truy cập thông qua tham số $_GET['page'].
+ * YumGO - Main router.
  */
 
-// 1. Khởi chạy Session toàn cục
+$sessionDir = __DIR__ . '/storage/sessions';
+if (!is_dir($sessionDir)) {
+    mkdir($sessionDir, 0775, true);
+}
+if (is_dir($sessionDir) && is_writable($sessionDir)) {
+    session_save_path($sessionDir);
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// 2. Nhúng hệ thống xác thực và trợ giúp (tự động nhúng database.php và config.php)
 require_once __DIR__ . '/includes/auth.php';
 
-// 3. Khởi tạo đối tượng PDO cục bộ từ lớp Database (Singleton) của TV1
-// Điều này giúp giữ nguyên tính tương thích cho các Model và Controller hiện tại sử dụng biến $pdo.
 try {
     $pdo = Database::getConnection();
 } catch (Exception $e) {
-    die("Lỗi kết nối cơ sở dữ liệu: " . htmlspecialchars($e->getMessage()));
+    die('Lỗi kết nối cơ sở dữ liệu: ' . htmlspecialchars($e->getMessage()));
 }
 
-// 4. Đọc tham số điều hướng, mặc định là trang chủ ('home')
+// Đồng bộ giỏ hàng từ CSDL vào Session nếu đã đăng nhập để đồng bộ giữa các trình duyệt/thiết bị khác nhau
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'user' && !empty($_SESSION['user']['id'])) {
+    require_once __DIR__ . '/models/UserCart.php';
+    try {
+        $userCartModel = new UserCart($pdo);
+        $_SESSION['cart'] = $userCartModel->getCart((int)$_SESSION['user']['id']);
+    } catch (Throwable $exception) {
+        error_log('Could not load user cart in router: ' . $exception->getMessage());
+    }
+}
+
 $page = isset($_GET['page']) ? trim($_GET['page']) : 'home';
 
-// 5. Định tuyến các yêu cầu (Routing Logic)
 switch ($page) {
-    
-    // Luồng Trang chủ
     case 'home':
         require_once __DIR__ . '/controllers/UserHomeController.php';
         $controller = new UserHomeController($pdo);
         $controller->index();
         break;
 
-    // Luồng Thực đơn / Danh sách món
     case 'foods':
         require_once __DIR__ . '/controllers/FoodController.php';
         $controller = new FoodController($pdo);
         $controller->listing();
         break;
 
-    // Luồng Chi tiết món ăn
     case 'food-detail':
         require_once __DIR__ . '/controllers/FoodController.php';
         $controller = new FoodController($pdo);
         $controller->detail();
         break;
 
-    // Luồng Xem Giỏ hàng
+    case 'favorites':
+        require_once __DIR__ . '/controllers/FoodController.php';
+        $controller = new FoodController($pdo);
+        $controller->favorites();
+        break;
+
+    case 'favorite-toggle':
+        require_once __DIR__ . '/controllers/FoodController.php';
+        $controller = new FoodController($pdo);
+        $controller->toggleFavorite();
+        break;
+
+    case 'favorite-sync':
+        require_once __DIR__ . '/controllers/FoodController.php';
+        $controller = new FoodController($pdo);
+        $controller->syncFavorites();
+        break;
+
+    case 'login':
+        require_once __DIR__ . '/controllers/UserAuthController.php';
+        $controller = new UserAuthController();
+        $controller->login();
+        break;
+
+    case 'register':
+        require_once __DIR__ . '/controllers/UserAuthController.php';
+        $controller = new UserAuthController();
+        $controller->register();
+        break;
+
+    case 'logout':
+        require_once __DIR__ . '/controllers/UserAuthController.php';
+        $controller = new UserAuthController();
+        $controller->logout();
+        break;
+
+    case 'account':
+        require_once __DIR__ . '/controllers/UserAccountController.php';
+        $controller = new UserAccountController($pdo);
+        $controller->index();
+        break;
+
+    case 'account-update':
+        require_once __DIR__ . '/controllers/UserAccountController.php';
+        $controller = new UserAccountController($pdo);
+        $controller->updateProfile();
+        break;
+
+    case 'account-password':
+        require_once __DIR__ . '/controllers/UserAccountController.php';
+        $controller = new UserAccountController($pdo);
+        $controller->updatePassword();
+        break;
+
+    case 'food-suggest':
+        require_once __DIR__ . '/controllers/FoodController.php';
+        $controller = new FoodController($pdo);
+        $controller->suggest();
+        break;
+
     case 'cart':
         require_once __DIR__ . '/controllers/CartController.php';
         $controller = new CartController($pdo);
         $controller->index();
         break;
 
-    // Các luồng POST/GET xử lý Giỏ hàng (Cart Actions)
     case 'cart-add':
         require_once __DIR__ . '/controllers/CartController.php';
         $controller = new CartController($pdo);
@@ -77,6 +143,16 @@ switch ($page) {
         require_once __DIR__ . '/controllers/CartController.php';
         $controller = new CartController($pdo);
         $controller->drawer();
+        break;
+
+    case 'support':
+        $title = 'Hỗ trợ khách hàng - YumGO';
+        $metaDescription = 'Trung tâm hỗ trợ YumGO với FAQ đặt món, COD, Banking, hủy đơn và thông tin liên hệ demo.';
+        $metaKeywords = 'hỗ trợ YumGO, FAQ đặt món, COD, Banking, hủy đơn';
+        $canonicalUrl = BASE_URL . '/index.php?page=support';
+        require_once __DIR__ . '/views/layouts/header.php';
+        require_once __DIR__ . '/views/user/support.php';
+        require_once __DIR__ . '/views/layouts/footer.php';
         break;
 
     case 'checkout':
@@ -127,15 +203,19 @@ switch ($page) {
         $controller->exportInvoice();
         break;
 
-    // Các luồng thuộc Thành viên 4 (Dưới góc độ tích hợp)
+    case 'reorder':
+        require_once __DIR__ . '/controllers/OrderController.php';
+        $controller = new OrderController($pdo);
+        $controller->reorder();
+        break;
+
     case 'admin-dashboard':
-        // Hiển thị màn hình chờ tích hợp đẹp mắt cho các chức năng của thành viên khác
-        $title = "Đang chờ tích hợp - YumGO";
+        $title = 'Đang chờ tích hợp - YumGO';
         require_once __DIR__ . '/views/layouts/header.php';
-        
-        $actor = 'Thành viên 4 (Admin & Shipper)';
-        $featureName = 'Bảng điều khiển quản trị (Admin Dashboard)';
-        
+
+        $actor = ($page === 'admin-dashboard') ? 'Thành viên 4 (Admin & Shipper)' : 'Thành viên 3 (Checkout & Order)';
+        $featureName = ($page === 'checkout') ? 'Thanh toán đơn hàng' : (($page === 'order-history') ? 'Lịch sử đơn hàng' : 'Bảng điều khiển quản trị');
+
         echo '
         <div class="container py-5 text-center d-flex flex-column align-items-center justify-content-center" style="min-height: 50vh;">
             <div class="mb-4 text-warning" style="opacity: 0.9; font-size: 60px;">
@@ -146,15 +226,14 @@ switch ($page) {
                 Trang <code>' . htmlspecialchars($page) . '</code> (<b>' . $featureName . '</b>) do <b>' . $actor . '</b> đảm nhận. Chức năng này sẽ hoạt động sau khi ghép mã nguồn chung của nhóm.
             </p>
             <a href="index.php?page=home" class="btn btn-primary-yumgo px-4 py-2 fs-6">
-                Quay lại Trang chủ
+                Quay lại trang chủ
             </a>
         </div>';
-        
+
         require_once __DIR__ . '/views/layouts/footer.php';
         break;
 
-    // Chuyển hướng về trang chủ nếu gõ sai route (404 Fallback)
     default:
-        header("Location: index.php?page=home");
+        header('Location: index.php?page=home');
         exit;
 }

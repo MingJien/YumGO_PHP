@@ -1,24 +1,37 @@
 <?php
 $title = "Thanh toán - YumGO";
 require_once 'views/layouts/header.php';
+$shippingFee = 15000;
+$estimatedTotal = $subtotal + $shippingFee;
+$checkoutUser = isset($checkoutUser) && is_array($checkoutUser) ? $checkoutUser : ($_SESSION['user'] ?? []);
+$checkoutName = (string)($checkoutUser['name'] ?? '');
+$checkoutPhone = (string)($checkoutUser['phone'] ?? '');
+$checkoutAddress = (string)($checkoutUser['address'] ?? '');
 ?>
 
 <div class="container py-5">
     <div class="row">
         <div class="col-md-7">
             <h4 class="mb-3">Thông tin giao hàng</h4>
-            <form action="index.php?page=process-checkout" method="POST">
+            <form
+                action="index.php?page=process-checkout"
+                method="POST"
+                data-checkout-form="1"
+                data-subtotal="<?= htmlspecialchars(number_format($subtotal, 0, ',', '.')) ?> đ"
+                data-shipping="<?= htmlspecialchars(number_format($shippingFee, 0, ',', '.')) ?> đ"
+                data-total="<?= htmlspecialchars(number_format($estimatedTotal, 0, ',', '.')) ?> đ"
+            >
                 <div class="mb-3">
                     <label for="fullName" class="form-label">Họ và tên</label>
-                    <input type="text" class="form-control" id="fullName" name="full_name" required>
+                    <input type="text" class="form-control" id="fullName" name="full_name" value="<?= htmlspecialchars($checkoutName) ?>" autocomplete="name" required>
                 </div>
                 <div class="mb-3">
                     <label for="phone" class="form-label">Số điện thoại</label>
-                    <input type="tel" class="form-control" id="phone" name="phone" pattern="[0-9]{10,11}" title="Vui lòng nhập số điện thoại hợp lệ" required>
+                    <input type="tel" class="form-control" id="phone" name="phone" value="<?= htmlspecialchars($checkoutPhone) ?>" pattern="[0-9]{10,11}" title="Vui lòng nhập số điện thoại hợp lệ" autocomplete="tel" required>
                 </div>
                 <div class="mb-3">
                     <label for="address" class="form-label">Địa chỉ giao hàng</label>
-                    <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
+                    <textarea class="form-control" id="address" name="address" rows="3" autocomplete="street-address" required><?= htmlspecialchars($checkoutAddress) ?></textarea>
                 </div>
                 <div class="mb-3">
                     <label for="note" class="form-label">Ghi chú (Tùy chọn)</label>
@@ -33,13 +46,13 @@ require_once 'views/layouts/header.php';
                     </label>
                 </div>
                 <div class="form-check mb-4">
-                    <input class="form-check-input" type="radio" name="payment_method" id="paymentTransfer" value="Transfer">
+                    <input class="form-check-input" type="radio" name="payment_method" id="paymentTransfer" value="Banking">
                     <label class="form-check-label" for="paymentTransfer">
                         Chuyển khoản ngân hàng
                     </label>
                 </div>
 
-                <div class="card p-3 mb-4 bg-light text-dark">
+                <div class="card p-3 mb-4" style="background: var(--yumgo-canvas-soft); border-color: var(--yumgo-hairline) !important;">
                     <label for="voucher_code" class="form-label fw-bold">Mã giảm giá (Voucher)</label>
                     <div class="input-group">
                         <input type="text" class="form-control" name="voucher_code" id="voucher_code" placeholder="Nhập mã ưu đãi...">
@@ -71,12 +84,12 @@ require_once 'views/layouts/header.php';
                 </div>
                 <div class="d-flex justify-content-between mt-2">
                     <span>Phí vận chuyển:</span>
-                    <strong>15.000 đ</strong>
+                    <strong><?= number_format($shippingFee, 0, ',', '.') ?> đ</strong>
                 </div>
                 <hr>
                 <div class="d-flex justify-content-between text-success">
                     <span>Thành tiền (Dự kiến):</span>
-                    <strong><?= number_format($subtotal + 15000, 0, ',', '.') ?> đ</strong>
+                    <strong><?= number_format($estimatedTotal, 0, ',', '.') ?> đ</strong>
                 </div>
             </div>
         </div>

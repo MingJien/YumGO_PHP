@@ -44,7 +44,7 @@ $base_dir = rtrim($base_dir, '/');
 define('BASE_URL', $_ENV['BASE_URL'] ?? ($protocol . $host . $base_dir));
 
 // Cấu hình đường dẫn vật lý trên server (dùng cho upload ảnh)
-define('UPLOAD_PATH', dirname(__DIR__) . '/uploads');
+define('UPLOAD_PATH', PATH_ROOT . '/uploads');
 define('UPLOAD_FOOD_PATH', UPLOAD_PATH . '/foods');
 define('UPLOAD_AVATAR_PATH', UPLOAD_PATH . '/avatars');
 define('UPLOAD_BANNER_PATH', UPLOAD_PATH . '/banners');

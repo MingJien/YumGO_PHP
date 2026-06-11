@@ -16,3 +16,8 @@ skills-lock.json
 package.json
 agent/
 /YumGO_PHP_remote/
+/storage/
+
+# Documentation & temporary files
+/docs/TechnicalAnalysis_ThanhVien2.md
+/scratch_cart_extracted.js
