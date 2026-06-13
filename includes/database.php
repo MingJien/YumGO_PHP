@@ -1,4 +1,3 @@
-//file database.php
 <?php
 declare(strict_types=1);
 
@@ -25,7 +24,8 @@ final class Database
             try {
                 self::$instance = new PDO($dsn, DB_USER, DB_PASS, $options);
             } catch (PDOException $exception) {
-                throw new RuntimeException('Database connection failed: ' . $exception->getMessage(), 0, $exception);
+                error_log('Database connection failed: ' . $exception->getMessage());
+                throw new RuntimeException('Không thể kết nối cơ sở dữ liệu. Vui lòng kiểm tra cấu hình hệ thống.', 0, $exception);
             }
         }
 

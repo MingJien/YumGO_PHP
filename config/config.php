@@ -1,25 +1,75 @@
-//file config.php
 <?php
 declare(strict_types=1);
 
-// Cau hinh chung, khong hardcode o noi khac.
-define('BASE_URL', 'http://localhost/yumgo');
+// Chặn truy cập trực tiếp (Bảo mật bổ sung)
+if (count(get_included_files()) === 1) {
+    http_response_code(403);
+    exit('Direct access not permitted.');
+}
 
-define('UPLOAD_PATH', __DIR__ . '/../uploads');
+// Tự động nạp autoload của Composer và cấu hình Dotenv (nếu có)
+if (file_exists(dirname(__DIR__) . '/vendor/autoload.php')) {
+    require_once dirname(__DIR__) . '/vendor/autoload.php';
+}
+
+if (class_exists('Dotenv\Dotenv') && file_exists(dirname(__DIR__) . '/.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
+    $dotenv->safeLoad();
+}
+
+// Cấu hình múi giờ hệ thống
+define('APP_TIMEZONE', $_ENV['APP_TIMEZONE'] ?? 'Asia/Ho_Chi_Minh');
+date_default_timezone_set(APP_TIMEZONE);
+
+// Đường dẫn thư mục gốc của dự án
+define('PATH_ROOT', dirname(__DIR__));
+
+// Cấu hình Database kết nối PDO từ biến môi trường (fallback về cấu hình mặc định)
+// Hỗ trợ Port (nếu có DB_PORT, ta nối vào host thành 'host;port=xxx' để PDO DSN của TV1 nhận dạng chính xác)
+$dbHost = $_ENV['DB_HOST'] ?? getenv('YUMGO_DB_HOST');
+if ($dbHost === false || $dbHost === '') {
+    $dbHost = '127.0.0.1';
+}
+$dbPort = $_ENV['DB_PORT'] ?? getenv('YUMGO_DB_PORT');
+if ($dbPort === false || $dbPort === '') {
+    $dbPort = '3306';
+}
+if ($dbPort !== '3306') {
+    $dbHost .= ';port=' . $dbPort;
+}
+define('DB_HOST', $dbHost);
+define('DB_NAME', ($_ENV['DB_NAME'] ?? getenv('YUMGO_DB_NAME')) ?: 'yumgo');
+define('DB_USER', ($_ENV['DB_USER'] ?? getenv('YUMGO_DB_USER')) ?: 'root');
+define('DB_PASS', ($_ENV['DB_PASS'] ?? getenv('YUMGO_DB_PASS')) ?: '');
+
+// Cấu hình đường dẫn URL gốc của dự án (Tự động nhận diện động hoặc fallback từ .env)
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+$base_dir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+if (preg_match('#/(admin|shipper|api)$#', $base_dir)) {
+    $base_dir = dirname($base_dir);
+}
+if ($base_dir === '/' || $base_dir === '\\') {
+    $base_dir = '';
+}
+define('BASE_URL', ($_ENV['BASE_URL'] ?? getenv('YUMGO_BASE_URL')) ?: ($protocol . $host . $base_dir));
+
+// Cấu hình đường dẫn vật lý trên server (dùng cho upload ảnh)
+define('UPLOAD_PATH', PATH_ROOT . '/uploads');
 define('UPLOAD_FOOD_PATH', UPLOAD_PATH . '/foods');
 define('UPLOAD_AVATAR_PATH', UPLOAD_PATH . '/avatars');
 define('UPLOAD_BANNER_PATH', UPLOAD_PATH . '/banners');
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'yumgo');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// Cấu hình giao hàng và bản đồ cho phân hệ Admin/Shipper
+define('GOOGLE_MAPS_API_KEY', ($_ENV['GOOGLE_MAPS_API_KEY'] ?? getenv('GOOGLE_MAPS_API_KEY')) ?: '');
+define('RESTAURANT_ADDRESS', $_ENV['RESTAURANT_ADDRESS'] ?? 'Trường Đại học Đồng Tháp, Cao Lãnh, Đồng Tháp, Việt Nam');
+define('RESTAURANT_LAT', (float)($_ENV['RESTAURANT_LAT'] ?? 10.4207885));
+define('RESTAURANT_LNG', (float)($_ENV['RESTAURANT_LNG'] ?? 105.6436113));
+define('DELIVERY_MAX_DISTANCE_KM', (float)($_ENV['DELIVERY_MAX_DISTANCE_KM'] ?? 10));
 
-define('APP_TIMEZONE', 'Asia/Ho_Chi_Minh');
-
+// Các đường dẫn URL phân quyền hệ thống của TV1
 define('ADMIN_LOGIN_URL', BASE_URL . '/admin/login.php');
 define('ADMIN_DASHBOARD_URL', BASE_URL . '/admin/index.php');
 define('SHIPPER_LOGIN_URL', BASE_URL . '/shipper/login.php');
 define('SHIPPER_DASHBOARD_URL', BASE_URL . '/shipper/index.php');
-
-date_default_timezone_set(APP_TIMEZONE);

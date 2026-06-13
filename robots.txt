@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /shipper/
+
+Sitemap: http://127.0.0.1:8088/sitemap.xml
